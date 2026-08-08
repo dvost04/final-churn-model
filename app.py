@@ -9,11 +9,11 @@ from sklearn.pipeline import Pipeline
 
 # --- 1. Load the main dataset (replace with your actual data loading method for deployment) ---
 # For local Colab execution, you might have df from files.upload() or a local path.
-# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252.csv' is in the same directory.
+# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252 (1).csv' is in the same directory.
 try:
-    df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252.csv')
+    df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252 (1).csv')
 except FileNotFoundError:
-    st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252.csv' not found. Please ensure it's in the same directory as app.py for deployment.")
+    st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252 (1).csv' not found. Please ensure it's in the same directory as app.py for deployment.")
     st.stop()
 
 # --- 2. Train the Predictive Model (same as before) ---
@@ -97,7 +97,7 @@ if st.sidebar.button('Predict Renewal') or 'prediction_made' not in st.session_s
     else:
         st.info("Renewal probability is moderate. Further analysis may be needed.")
 
-# --- Original Product Summary Dashboard (Optional - can be removed if no longer needed) ---
+# --- Original Product Summary Dashboard ---
 st.markdown("--- ")
 st.subheader("Product Churn Summary (from initial request)")
 # Data provided by the user, parsed into a DataFrame
@@ -119,6 +119,29 @@ df_summary = pd.DataFrame(data_summary)
 df_summary['Churn Score'] = 1 - df_summary['Renewal Score']
 
 st.sidebar.subheader("Product Summary Options")
+
+# Sliders for Renewal Score range
+renewal_score_min, renewal_score_max = st.sidebar.slider(
+    "Filter by Renewal Score range:",
+    min_value=0.0, max_value=1.0, value=(0.0, 1.0), step=0.01,
+    key='renewal_score_range_slider'
+)
+
+# Sliders for Churn Score range
+churn_score_min, churn_score_max = st.sidebar.slider(
+    "Filter by Churn Score range:",
+    min_value=0.0, max_value=1.0, value=(0.0, 1.0), step=0.01,
+    key='churn_score_range_slider'
+)
+
+# Apply score filters
+filtered_df_summary_scores = filtered_df_summary[
+    (filtered_df_summary['Renewal Score'] >= renewal_score_min) &
+    (filtered_df_summary['Renewal Score'] <= renewal_score_max) &
+    (filtered_df_summary['Churn Score'] >= churn_score_min) &
+    (filtered_df_summary['Churn Score'] <= churn_score_max)
+]
+
 display_score_type = st.sidebar.radio(
     "Display Score Type:",
     ('Renewal Score', 'Churn Score', 'Both'),
@@ -134,7 +157,8 @@ selected_focus_summary = st.sidebar.multiselect(
     key='summary_focus_multiselect'
 )
 
-filtered_df_summary = df_summary[df_summary["Primary Focus"].isin(selected_focus_summary)]
+# Re-apply focus filter after score filters
+filtered_df_summary = filtered_df_summary_scores[filtered_df_summary_scores["Primary Focus"].isin(selected_focus_summary)]
 
 # Sort by Score
 sort_column_options = ['Renewal Score', 'Churn Score']
