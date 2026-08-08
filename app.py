@@ -163,4 +163,53 @@ display_score_type = st.sidebar.radio(
 selected_focus_summary = st.sidebar.multiselect(
     "Select Primary Focus (Product Summary):",
     options=df_summary["Primary Focus"].unique(),
-    default=df_summary[
+    default=df_summary["Primary Focus"].unique(),
+    key='summary_focus_multiselect'
+)
+
+# Re-apply focus filter after score filters
+filtered_df_summary = filtered_df_summary_scores[filtered_df_summary_scores["Primary Focus"].isin(selected_focus_summary)]
+
+# Sort by options, including 'Product'
+sort_column_options_summary = ['Product', 'Renewal Score', 'Churn Score']
+sort_by_summary = st.sidebar.radio(
+    "Sort Product Summary by:",
+    sort_column_options_summary,
+    index=0,
+    key='summary_sort_radio'
+)
+
+sort_order_summary = st.sidebar.radio(
+    "Sort Order (Product Summary):",
+    ('High to Low', 'Low to High'),
+    index=0,
+    key='summary_sort_order_radio'
+)
+
+# Determine ascending based on sort order and column type
+ascending_sort = True
+if sort_order_summary == 'High to Low':
+    # For scores, 'High to Low' means descending
+    # For 'Product' (string), 'High to Low' usually means Z-A, which is ascending=False
+    if sort_by_summary in ['Renewal Score', 'Churn Score']:
+        ascending_sort = False
+    else: # For 'Product'
+        ascending_sort = False # Z-A
+else: # Low to High
+    # For scores, 'Low to High' means ascending
+    # For 'Product' (string), 'Low to High' usually means A-Z, which is ascending=True
+    if sort_by_summary in ['Renewal Score', 'Churn Score']:
+        ascending_sort = True
+    else: # For 'Product'
+        ascending_sort = True # A-Z
+
+sorted_df_summary = filtered_df_summary.sort_values(by=sort_by_summary, ascending=ascending_sort)
+
+st.subheader("Product Churn Summary (Filtered and Sorted)")
+
+if display_score_type == 'Renewal Score':
+    st.dataframe(sorted_df_summary[['Product', 'Renewal Score', 'Primary Focus', 'Key Signal']])
+elif display_score_type == 'Churn Score':
+    st.dataframe(sorted_df_summary[['Product', 'Churn Score', 'Primary Focus', 'Key Signal']])
+else: # Both
+    st.dataframe(sorted_df_summary)
