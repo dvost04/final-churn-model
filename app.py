@@ -8,34 +8,43 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
 # --- 1. Load the main dataset (replace with your actual data loading method for deployment) ---
-# For local Colab execution, you might have df from files.upload() or a local path.
-# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252.csv' is in the same directory.
-try:
-    df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252.csv')
-except FileNotFoundError:
-    st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252.csv' not found. Please ensure it's in the same directory as app.py for deployment.")
-    st.stop()
+# Use st.cache_data to cache the DataFrame loading, so it only runs once
+@st.cache_data
+def load_data():
+    try:
+        df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252.csv')
+        return df
+    except FileNotFoundError:
+        st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252.csv' not found. Please ensure it's in the same directory as app.py for deployment.")
+        st.stop()
+df = load_data()
 
 # --- 2. Train the Predictive Model (same as before) ---
-X = df.drop(['CUSTOMER_ID', 'RENEWED'], axis=1)
-y = df['RENEWED']
+# Use st.cache_resource to cache the model training, so it only runs once
+@st.cache_resource
+def train_model(dataframe):
+    X = dataframe.drop(['CUSTOMER_ID', 'RENEWED'], axis=1)
+    y = dataframe['RENEWED']
 
-categorical_features = X.select_dtypes(include=['object']).columns
-numerical_features = X.select_dtypes(include=['int64', 'float64']).columns
+    categorical_features = X.select_dtypes(include=['object']).columns
+    numerical_features = X.select_dtypes(include=['int64', 'float64']).columns
 
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', 'passthrough', numerical_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', 'passthrough', numerical_features),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+        ])
+
+    model_pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', RandomForestClassifier(random_state=42))
     ])
 
-model_pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('classifier', RandomForestClassifier(random_state=42))
-])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    model_pipeline.fit(X_train, y_train)
+    return model_pipeline, X.columns # Return X.columns to ensure correct input order for prediction
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-model_pipeline.fit(X_train, y_train)
+model_pipeline, trained_feature_columns = train_model(df)
 
 # --- 3. Streamlit Application Layout and Logic ---
 st.set_page_config(layout="wide")
@@ -77,9 +86,10 @@ input_data = pd.DataFrame([{
 }])
 
 # Ensure column order matches training data's X
-input_data = input_data[X.columns]
+input_data = input_data[trained_feature_columns] # Use the cached trained_feature_columns
 
 # Make prediction
+# Only run prediction logic if inputs change or button is pressed
 if st.sidebar.button('Predict Renewal') or 'prediction_made' not in st.session_state:
     st.session_state.prediction_made = True
     prediction_proba = model_pipeline.predict_proba(input_data)[0]
@@ -91,11 +101,11 @@ if st.sidebar.button('Predict Renewal') or 'prediction_made' not in st.session_s
     st.metric(label="Churn Probability", value=f"{churn_probability:.2%}")
 
     if renewal_probability > 0.7:
-        st.success("This customer is likely to renew!")
+        st.success(f"This customer is likely to renew! (Churn Score: {churn_probability:.2%})")
     elif renewal_probability < 0.3:
-        st.warning("This customer is at high risk of churning.")
+        st.warning(f"This customer is at high risk of churning. (Churn Score: {churn_probability:.2%})")
     else:
-        st.info("Renewal probability is moderate. Further analysis may be needed.")
+        st.info(f"Renewal probability is moderate. Further analysis may be needed. (Churn Score: {churn_probability:.2%})")
 
 # --- Original Product Summary Dashboard ---
 st.markdown("--- ")
@@ -134,7 +144,7 @@ churn_score_min, churn_score_max = st.sidebar.slider(
     key='churn_score_range_slider'
 )
 
-# Apply score filters
+# Apply score filters - *Corrected to filter from df_summary*
 filtered_df_summary_scores = df_summary[
     (df_summary['Renewal Score'] >= renewal_score_min) &
     (df_summary['Renewal Score'] <= renewal_score_max) &
