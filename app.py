@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 
 # --- 1. Load the main dataset (replace with your actual data loading method for deployment) ---
 # For local Colab execution, you might have df from files.upload() or a local path.
-# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252 .csv' is in the same directory.
+# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252.csv' is in the same directory.
 try:
     df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252.csv')
 except FileNotFoundError:
@@ -135,11 +135,11 @@ churn_score_min, churn_score_max = st.sidebar.slider(
 )
 
 # Apply score filters
-filtered_df_summary_scores = filtered_df_summary[
-    (filtered_df_summary['Renewal Score'] >= renewal_score_min) &
-    (filtered_df_summary['Renewal Score'] <= renewal_score_max) &
-    (filtered_df_summary['Churn Score'] >= churn_score_min) &
-    (filtered_df_summary['Churn Score'] <= churn_score_max)
+filtered_df_summary_scores = df_summary[
+    (df_summary['Renewal Score'] >= renewal_score_min) &
+    (df_summary['Renewal Score'] <= renewal_score_max) &
+    (df_summary['Churn Score'] >= churn_score_min) &
+    (df_summary['Churn Score'] <= churn_score_max)
 ]
 
 display_score_type = st.sidebar.radio(
