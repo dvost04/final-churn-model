@@ -9,11 +9,11 @@ from sklearn.pipeline import Pipeline
 
 # --- 1. Load the main dataset (replace with your actual data loading method for deployment) ---
 # For local Colab execution, you might have df from files.upload() or a local path.
-# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252 (1).csv' is in the same directory.
+# For Render deployment, assume 'ASSIGNMENT2REDO_2026-07-26-2252 .csv' is in the same directory.
 try:
-    df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252 (1).csv')
+    df = pd.read_csv('ASSIGNMENT2REDO_2026-07-26-2252.csv')
 except FileNotFoundError:
-    st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252 (1).csv' not found. Please ensure it's in the same directory as app.py for deployment.")
+    st.error("Data file 'ASSIGNMENT2REDO_2026-07-26-2252.csv' not found. Please ensure it's in the same directory as app.py for deployment.")
     st.stop()
 
 # --- 2. Train the Predictive Model (same as before) ---
