@@ -115,4 +115,53 @@ data_summary = {
 }
 
 df_summary = pd.DataFrame(data_summary)
-st.dataframe(df_summary)
+# Add Churn Score to the summary dataframe
+df_summary['Churn Score'] = 1 - df_summary['Renewal Score']
+
+st.sidebar.subheader("Product Summary Options")
+display_score_type = st.sidebar.radio(
+    "Display Score Type:",
+    ('Renewal Score', 'Churn Score', 'Both'),
+    index=0,
+    key='display_score_type_radio'
+)
+
+# Filter by Primary Focus
+selected_focus_summary = st.sidebar.multiselect(
+    "Select Primary Focus (Product Summary):",
+    options=df_summary["Primary Focus"].unique(),
+    default=df_summary["Primary Focus"].unique(),
+    key='summary_focus_multiselect'
+)
+
+filtered_df_summary = df_summary[df_summary["Primary Focus"].isin(selected_focus_summary)]
+
+# Sort by Score
+sort_column_options = ['Renewal Score', 'Churn Score']
+sort_by_summary = st.sidebar.radio(
+    "Sort Product Summary by:",
+    sort_column_options,
+    index=0,
+    key='summary_sort_radio'
+)
+
+sort_order_summary = st.sidebar.radio(
+    "Sort Order (Product Summary):",
+    ('High to Low', 'Low to High'),
+    index=0,
+    key='summary_sort_order_radio'
+)
+
+if sort_order_summary == 'High to Low':
+    sorted_df_summary = filtered_df_summary.sort_values(by=sort_by_summary, ascending=False)
+else:
+    sorted_df_summary = filtered_df_summary.sort_values(by=sort_by_summary, ascending=True)
+
+st.subheader("Product Churn Summary (Filtered and Sorted)")
+
+if display_score_type == 'Renewal Score':
+    st.dataframe(sorted_df_summary[['Product', 'Renewal Score', 'Primary Focus', 'Key Signal']])
+elif display_score_type == 'Churn Score':
+    st.dataframe(sorted_df_summary[['Product', 'Churn Score', 'Primary Focus', 'Key Signal']])
+else: # Both
+    st.dataframe(sorted_df_summary) # Will display all columns including both scores
