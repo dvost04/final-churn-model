@@ -101,11 +101,11 @@ if st.sidebar.button('Predict Renewal') or 'prediction_made' not in st.session_s
     st.metric(label="Churn Probability", value=f"{churn_probability:.2%}")
 
     if renewal_probability > 0.7:
-        st.success(f"This customer is likely to renew! (Churn Score: {churn_probability:.2%})")
+        st.success("This customer is likely to renew!")
     elif renewal_probability < 0.3:
-        st.warning(f"This customer is at high risk of churning. (Churn Score: {churn_probability:.2%})")
+        st.warning("This customer is at high risk of churning.")
     else:
-        st.info(f"Renewal probability is moderate. Further analysis may be needed. (Churn Score: {churn_probability:.2%})")
+        st.info("Renewal probability is moderate. Further analysis may be needed.")
 
 # --- Original Product Summary Dashboard ---
 st.markdown("--- ")
@@ -163,39 +163,4 @@ display_score_type = st.sidebar.radio(
 selected_focus_summary = st.sidebar.multiselect(
     "Select Primary Focus (Product Summary):",
     options=df_summary["Primary Focus"].unique(),
-    default=df_summary["Primary Focus"].unique(),
-    key='summary_focus_multiselect'
-)
-
-# Re-apply focus filter after score filters
-filtered_df_summary = filtered_df_summary_scores[filtered_df_summary_scores["Primary Focus"].isin(selected_focus_summary)]
-
-# Sort by Score
-sort_column_options = ['Renewal Score', 'Churn Score']
-sort_by_summary = st.sidebar.radio(
-    "Sort Product Summary by:",
-    sort_column_options,
-    index=0,
-    key='summary_sort_radio'
-)
-
-sort_order_summary = st.sidebar.radio(
-    "Sort Order (Product Summary):",
-    ('High to Low', 'Low to High'),
-    index=0,
-    key='summary_sort_order_radio'
-)
-
-if sort_order_summary == 'High to Low':
-    sorted_df_summary = filtered_df_summary.sort_values(by=sort_by_summary, ascending=False)
-else:
-    sorted_df_summary = filtered_df_summary.sort_values(by=sort_by_summary, ascending=True)
-
-st.subheader("Product Churn Summary (Filtered and Sorted)")
-
-if display_score_type == 'Renewal Score':
-    st.dataframe(sorted_df_summary[['Product', 'Renewal Score', 'Primary Focus', 'Key Signal']])
-elif display_score_type == 'Churn Score':
-    st.dataframe(sorted_df_summary[['Product', 'Churn Score', 'Primary Focus', 'Key Signal']])
-else: # Both
-    st.dataframe(sorted_df_summary) # Will display all columns including both scores
+    default=df_summary[
